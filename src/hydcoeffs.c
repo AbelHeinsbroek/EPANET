@@ -64,6 +64,7 @@ static void    pcvcoeff(Project *pr, int k);
 static void    prvcoeff(Project *pr, int k, int n1, int n2);
 static void    psvcoeff(Project *pr, int k, int n1, int n2);
 static void    fcvcoeff(Project *pr, int k, int n1, int n2);
+static void    evcoeff(Project *pr, int k);
 
 
 void addlowerbarrier(double dq, double* hloss, double* hgrad)
@@ -276,6 +277,10 @@ void headlosscoeffs(Project *pr)
         case GPV:
             gpvcoeff(pr, k);
             break;
+        case EV:
+            evcoeff(pr, k);
+            break;
+
         case FCV:
         case PRV:
         case PSV:
@@ -285,6 +290,34 @@ void headlosscoeffs(Project *pr)
     }
 }
 
+void evcoeff(Project *pr, int k) 
+{
+  Hydraul *hyd = &pr->hydraul;
+  double flow, hgrad, hloss;
+  double *Ucf = pr->Ucf;
+
+  double qexp = hyd->Qexp;
+
+  double k_value = 1.0;
+
+  double ecfTmp = MperFT;
+  double ke = pow((Ucf[FLOW] / k_value ), hyd->Qexp) / ecfTmp;
+
+  flow = hyd->LinkFlow[k];
+
+  hgrad = qexp * ke * pow(fabs(flow), qexp - 1.0);
+
+  if (hgrad < hyd->RQtol) {
+    hgrad = hyd->RQtol / qexp;
+    hloss = hgrad * flow;
+  } else {
+    hloss = hgrad * flow / qexp;
+  }
+
+  hyd->P[k] = 1 / hgrad;
+  hyd->Y[k] = hloss / hgrad;
+
+}
 
 void   matrixcoeffs(Project *pr)
 /*
@@ -532,7 +565,7 @@ void emitterheadloss(Project *pr, int i, double *hloss, double *hgrad)
 
     // Otherwise use normal emitter head loss function
     else *hloss = (*hgrad) * q / hyd->Qexp;
-    
+
     // Prevent negative flow if backflow not allowed
     if (hyd->EmitBackFlag == 0)
     {

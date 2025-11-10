@@ -3346,7 +3346,7 @@ int DLLEXPORT EN_addlink(EN_Project p, const char *id, int linkType,
     if (EN_getlinkindex(p, id, &i) == 0) return 215;
 
     // Check for valid link type
-    if (linkType < CVPIPE || linkType > PCV) return 251;
+    if (linkType < CVPIPE || linkType > EV) return 251;
 
     // Lookup the link's from and to nodes
     n1 = hashtable_find(net->NodeHashTable, fromNode);
